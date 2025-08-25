@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$frontendUrl = "http://localhost:5173"; // your Vue frontend URL
+$frontendUrl = "http://localhost:5174"; // your Vue frontend URL
 
 header("Access-Control-Allow-Origin: $frontendUrl"); // must match frontend exactly
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");

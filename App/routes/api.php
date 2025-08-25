@@ -2,6 +2,7 @@
 use App\Core\RouterAPI;
 use App\Controllers\AuthController;
 use App\Controllers\UserController;
+use App\Controllers\VolunteerController;
 
 $routerApi = new RouterAPI();
 $routerApi->post('/capstone4-mvc/public/api/login', [AuthController::class, 'apiLogin'], false);

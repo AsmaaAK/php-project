@@ -1,14 +1,17 @@
 <?php
 declare(strict_types=1);
+namespace App\Controllers; 
+use App\Core\Controller;
+use App\Models\Volunteer;
+use App\Core\App;
+use PDO;
 
-require_once __DIR__ . '/../../config/app.php';
-
-class VolunteerController {
+class VolunteerController extends Controller {
 
     private $pdo;
 
     public function __construct() {
-        $this->pdo = App::pdo();
+        $this->pdo = App::db();
         header('Content-Type: application/json');
     }
 
