@@ -27,7 +27,7 @@ require __DIR__ . '/../vendor/autoload.php';
 // $routerApi = new RouterAPI();
 
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-$isApiRequest = strpos($requestUri, '/capstone4-mvc/public/api/') === 0;
+$isApiRequest = strpos($requestUri, '/php-project/public/api/') === 0;
 
 // Always apply CORS middleware first for API requests
 if ($isApiRequest) {
