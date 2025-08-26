@@ -1,123 +1,176 @@
 <?php
-declare(strict_types=1);
-namespace App\Controllers; 
+namespace App\Controllers;
+
 use App\Core\Controller;
 use App\Models\Volunteer;
-use App\Core\App;
-use PDO;
 
-class VolunteerController extends Controller {
+class VolunteerController extends Controller
+{
+    public function index(): void
+    {
+        if (!isset($_SESSION['user_id'])) {
+            $this->redirect('/auth/login');
+            return;
+        }
 
-    private $pdo;
-
-    public function __construct() {
-        $this->pdo = App::db();
-        header('Content-Type: application/json');
+        $volunteers = Volunteer::all();
+        $this->render('volunteers/index', [
+            'title' => 'قائمة المتطوعين',
+            'volunteers' => $volunteers
+        ]);
     }
 
-    // GET /volunteers?location=&availability=&search=
-    public function index() {
-        $location = $_GET['location'] ?? '';
-        $availability = $_GET['availability'] ?? '';
-        $search = $_GET['search'] ?? '';
-
-        $query = "SELECT * FROM volunteers WHERE 1=1";
-        $params = [];
-
-        if ($location) {
-            $query .= " AND location LIKE ?";
-            $params[] = "%$location%";
-        }
-        if ($availability) {
-            $query .= " AND availability LIKE ?";
-            $params[] = "%$availability%";
-        }
-        if ($search) {
-            $query .= " AND (name LIKE ? OR email LIKE ? OR skills LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
-        }
-
-        $stmt = $this->pdo->prepare($query);
-        $stmt->execute($params);
-        $volunteers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // تحويل عمود skills من JSON إلى Array
-        foreach ($volunteers as &$vol) {
-            $vol['skills'] = json_decode($vol['skills'], true) ?: [];
-        }
-
-        echo json_encode($volunteers);
+    public function getAllVolunteers(): void
+    {
+        $volunteers = Volunteer::all();
+        $this->json(['volunteers' => $volunteers]);
     }
 
-    // GET /volunteers/{id}
-    public function show(int $id) {
-        $stmt = $this->pdo->prepare("SELECT * FROM volunteers WHERE id = ?");
-        $stmt->execute([$id]);
-        $vol = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$vol) {
+    public function apiCreate(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
+            exit;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        $volunteer = new Volunteer();
+        $volunteer->name = $data['name'] ?? '';
+        $volunteer->age = (int)($data['age'] ?? 0);
+        $volunteer->location = $data['location'] ?? '';
+        $volunteer->availability = $data['availability'] ?? '';
+        $volunteer->email = $data['email'] ?? '';
+        $volunteer->skills = $data['skills'] ?? '';
+
+        // التحقق من الحقول المطلوبة
+        if (empty($volunteer->name) || empty($volunteer->email) || empty($volunteer->location)) {
+            http_response_code(400);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'الحقول الأساسية مطلوبة'
+            ]);
+            exit;
+        }
+
+        try {
+            if ($volunteer->save()) {
+                http_response_code(201);
+                echo json_encode([
+                    'status' => 'success',
+                    'message' => 'تم إضافة المتطوع بنجاح',
+                    'volunteer' => [
+                        'id' => $volunteer->id,
+                        'name' => $volunteer->name,
+                        'email' => $volunteer->email
+                    ]
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'فشل في إضافة المتطوع'
+                ]);
+            }
+        } catch (\PDOException $e) {
+            http_response_code(409);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'البريد الإلكتروني مستخدم مسبقًا',
+                'error' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    public function apiUpdate(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            http_response_code(405);
+            echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
+            exit;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id = (int)($data['id'] ?? 0);
+
+        $volunteer = Volunteer::find($id);
+        if (!$volunteer) {
             http_response_code(404);
-            echo json_encode(['error' => 'المتطوع غير موجود']);
-            return;
+            echo json_encode(['status' => 'error', 'message' => 'المتطوع غير موجود']);
+            exit;
         }
-        $vol['skills'] = json_decode($vol['skills'], true) ?: [];
-        echo json_encode($vol);
+
+        $volunteer->name = $data['name'] ?? $volunteer->name;
+        $volunteer->age = (int)($data['age'] ?? $volunteer->age);
+        $volunteer->location = $data['location'] ?? $volunteer->location;
+        $volunteer->availability = $data['availability'] ?? $volunteer->availability;
+        $volunteer->email = $data['email'] ?? $volunteer->email;
+        $volunteer->skills = $data['skills'] ?? $volunteer->skills;
+
+        try {
+            if ($volunteer->save()) {
+                echo json_encode([
+                    'status' => 'success',
+                    'message' => 'تم تحديث بيانات المتطوع بنجاح'
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'فشل في تحديث البيانات'
+                ]);
+            }
+        } catch (\PDOException $e) {
+            http_response_code(409);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'خطأ في تحديث البيانات',
+                'error' => $e->getMessage()
+            ]);
+        }
+        exit;
     }
 
-    // POST /volunteers
-    public function store() {
+    public function apiDelete(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
+            exit;
+        }
+
         $data = json_decode(file_get_contents('php://input'), true);
-        if (!$data) {
-            http_response_code(400);
-            echo json_encode(['error' => 'بيانات غير صالحة']);
-            return;
+        $id = (int)($data['id'] ?? 0);
+
+        try {
+            if (Volunteer::delete($id)) {
+                echo json_encode([
+                    'status' => 'success',
+                    'message' => 'تم حذف المتطوع بنجاح'
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'المتطوع غير موجود'
+                ]);
+            }
+        } catch (\PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'فشل في حذف المتطوع',
+                'error' => $e->getMessage()
+            ]);
         }
-
-        $stmt = $this->pdo->prepare(
-            "INSERT INTO volunteers (name, age, location, availability, email, skills) VALUES (?, ?, ?, ?, ?, ?)"
-        );
-        $stmt->execute([
-            $data['name'],
-            $data['age'],
-            $data['location'],
-            $data['availability'],
-            $data['email'],
-            json_encode($data['skills'])
-        ]);
-
-        echo json_encode(['message' => 'تم إضافة المتطوع بنجاح']);
-    }
-
-    // PUT /volunteers/{id}
-    public function update(int $id) {
-        $data = json_decode(file_get_contents('php://input'), true);
-        if (!$data) {
-            http_response_code(400);
-            echo json_encode(['error' => 'بيانات غير صالحة']);
-            return;
-        }
-
-        $stmt = $this->pdo->prepare(
-            "UPDATE volunteers SET name=?, age=?, location=?, availability=?, email=?, skills=? WHERE id=?"
-        );
-        $stmt->execute([
-            $data['name'],
-            $data['age'],
-            $data['location'],
-            $data['availability'],
-            $data['email'],
-            json_encode($data['skills']),
-            $id
-        ]);
-
-        echo json_encode(['message' => 'تم تعديل المتطوع بنجاح']);
-    }
-
-    // DELETE /volunteers/{id}
-    public function delete(int $id) {
-        $stmt = $this->pdo->prepare("DELETE FROM volunteers WHERE id=?");
-        $stmt->execute([$id]);
-        echo json_encode(['message' => 'تم حذف المتطوع بنجاح']);
+        exit;
     }
 }
