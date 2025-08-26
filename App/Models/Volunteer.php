@@ -3,118 +3,107 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Core\App;
 use PDO;
-use PDOException;
 
 class Volunteer
 {
-    private PDO $db;
+    public int $id;
+    public string $name;
+    public int $age;
+    public string $location;
+    public string $availability;
+    public string $email;
+    public string $skills;
 
-    public function __construct(PDO $db)
+    public static function all(): array
     {
-        $this->db = $db;
-    }
-
-    // ==========================
-    // جلب كل المتطوعين
-    // ==========================
-    public function all(): array
-    {
-        $stmt = $this->db->prepare("SELECT * FROM volunteers ORDER BY id DESC");
-        $stmt->execute();
+        $stmt = App::db()->query('SELECT * FROM volunteers ORDER BY id DESC');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==========================
-    // جلب متطوع واحد
-    // ==========================
-    public function find(int $id): ?array
+    public static function find(int $id): ?self
     {
-        $stmt = $this->db->prepare("SELECT * FROM volunteers WHERE id = :id");
-        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
-        $volunteer = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $volunteer ?: null;
+        $stmt = App::db()->prepare('SELECT * FROM volunteers WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? self::map($row) : null;
     }
 
-    // ==========================
-    // إنشاء متطوع جديد
-    // ==========================
-    public function create(array $data): int
+    public static function findByEmail(string $email): ?self
     {
-        $stmt = $this->db->prepare("
-            INSERT INTO volunteers (name, age, location, availability, email, skills)
-            VALUES (:name, :age, :location, :availability, :email, :skills)
-        ");
-        $stmt->execute([
-            ':name' => $data['name'],
-            ':age' => $data['age'],
-            ':location' => $data['location'],
-            ':availability' => $data['availability'],
-            ':email' => $data['email'],
-            ':skills' => implode(',', $data['skills']), // نخزن المهارات كمجموعة نصية
-        ]);
-
-        return (int)$this->db->lastInsertId();
+        $stmt = App::db()->prepare('SELECT * FROM volunteers WHERE email = :email LIMIT 1');
+        $stmt->execute([':email' => $email]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? self::map($row) : null;
     }
 
-    // ==========================
-    // تحديث متطوع
-    // ==========================
-    public function update(int $id, array $data): bool
+    public function save(): bool
     {
-        $stmt = $this->db->prepare("
-            UPDATE volunteers SET
-                name = :name,
-                age = :age,
-                location = :location,
-                availability = :availability,
-                email = :email,
-                skills = :skills
-            WHERE id = :id
-        ");
+        if (isset($this->id)) {
+            return $this->update();
+        } else {
+            return $this->create();
+        }
+    }
+
+    private function create(): bool
+    {
+        $stmt = App::db()->prepare(
+            "INSERT INTO volunteers (name, age, location, availability, email, skills) 
+             VALUES (:name, :age, :location, :availability, :email, :skills)"
+        );
+
         return $stmt->execute([
-            ':name' => $data['name'],
-            ':age' => $data['age'],
-            ':location' => $data['location'],
-            ':availability' => $data['availability'],
-            ':email' => $data['email'],
-            ':skills' => implode(',', $data['skills']),
-            ':id' => $id,
+            ':name' => $this->name,
+            ':age' => $this->age,
+            ':location' => $this->location,
+            ':availability' => $this->availability,
+            ':email' => $this->email,
+            ':skills' => $this->skills
         ]);
     }
 
-    // ==========================
-    // حذف متطوع
-    // ==========================
-    public function delete(int $id): bool
+    private function update(): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM volunteers WHERE id = :id");
+        $stmt = App::db()->prepare(
+            "UPDATE volunteers SET 
+                name = :name, 
+                age = :age, 
+                location = :location, 
+                availability = :availability, 
+                email = :email, 
+                skills = :skills 
+             WHERE id = :id"
+        );
+
+        return $stmt->execute([
+            ':id' => $this->id,
+            ':name' => $this->name,
+            ':age' => $this->age,
+            ':location' => $this->location,
+            ':availability' => $this->availability,
+            ':email' => $this->email,
+            ':skills' => $this->skills
+        ]);
+    }
+
+    public static function delete(int $id): bool
+    {
+        $stmt = App::db()->prepare('DELETE FROM volunteers WHERE id = :id');
         return $stmt->execute([':id' => $id]);
     }
 
-    // ==========================
-    // بحث وفلاتر
-    // ==========================
-    public function search(?string $location = null, ?string $availability = null): array
+    private static function map(array $row): self
     {
-        $query = "SELECT * FROM volunteers WHERE 1=1";
-        $params = [];
-
-        if ($location) {
-            $query .= " AND location LIKE :location";
-            $params[':location'] = "%$location%";
-        }
-
-        if ($availability) {
-            $query .= " AND availability LIKE :availability";
-            $params[':availability'] = "%$availability%";
-        }
-
-        $query .= " ORDER BY id DESC";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute($params);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $v = new self();
+        $v->id = (int)$row['id'];
+        $v->name = $row['name'];
+        $v->age = (int)$row['age'];
+        $v->location = $row['location'];
+        $v->availability = $row['availability'];
+        $v->email = $row['email'];
+        $v->skills = $row['skills'];
+        return $v;
     }
 }
