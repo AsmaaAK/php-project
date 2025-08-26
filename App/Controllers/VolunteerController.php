@@ -19,6 +19,15 @@ class VolunteerController extends Controller
             'volunteers' => $volunteers
         ]);
     }
+    public function indexApi(){
+        $volunteers = Volunteer::all();
+        http_response_code(201);
+                echo json_encode([
+                    'status' => 'success',
+                    'volunteers' => $volunteers
+                ]);
+
+    }
 
     public function getAllVolunteers(): void
     {
@@ -44,7 +53,7 @@ class VolunteerController extends Controller
         $volunteer->location = $data['location'] ?? '';
         $volunteer->availability = $data['availability'] ?? '';
         $volunteer->email = $data['email'] ?? '';
-        $volunteer->skills = $data['skills'] ?? '';
+$volunteer->skills = isset($data['skills']) ? json_encode($data['skills']) : '';
 
         // التحقق من الحقول المطلوبة
         if (empty($volunteer->name) || empty($volunteer->email) || empty($volunteer->location)) {
@@ -111,7 +120,8 @@ class VolunteerController extends Controller
         $volunteer->location = $data['location'] ?? $volunteer->location;
         $volunteer->availability = $data['availability'] ?? $volunteer->availability;
         $volunteer->email = $data['email'] ?? $volunteer->email;
-        $volunteer->skills = $data['skills'] ?? $volunteer->skills;
+        // $volunteer->skills = $data['skills'] ?? $volunteer->skills;
+$volunteer->skills = isset($data['skills']) ? json_encode($data['skills']) :  $volunteer->skills;
 
         try {
             if ($volunteer->save()) {
@@ -136,41 +146,41 @@ class VolunteerController extends Controller
         }
         exit;
     }
+public function apiDelete($id): void
+{
+    $id = (int)$id; // تحويل الـ id إلى int
 
-    public function apiDelete(): void
-    {
-        header('Content-Type: application/json; charset=utf-8');
+    header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
-            http_response_code(405);
-            echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
-            exit;
-        }
-
-        $data = json_decode(file_get_contents('php://input'), true);
-        $id = (int)($data['id'] ?? 0);
-
-        try {
-            if (Volunteer::delete($id)) {
-                echo json_encode([
-                    'status' => 'success',
-                    'message' => 'تم حذف المتطوع بنجاح'
-                ]);
-            } else {
-                http_response_code(404);
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'المتطوع غير موجود'
-                ]);
-            }
-        } catch (\PDOException $e) {
-            http_response_code(500);
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'فشل في حذف المتطوع',
-                'error' => $e->getMessage()
-            ]);
-        }
+    if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+        http_response_code(405);
+        echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
         exit;
     }
+
+    try {
+        if (Volunteer::delete($id)) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'تم حذف المتطوع بنجاح'
+            ]);
+        } else {
+            http_response_code(404);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'المتطوع غير موجود'
+            ]);
+        }
+    } catch (\PDOException $e) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'فشل في حذف المتطوع',
+            'error' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
+
+
 }

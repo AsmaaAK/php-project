@@ -8,7 +8,7 @@ use PDO;
 
 class Volunteer
 {
-    public int $id;
+    public ?int $id = null;
     public string $name;
     public int $age;
     public string $location;
@@ -88,11 +88,13 @@ class Volunteer
         ]);
     }
 
-    public static function delete(int $id): bool
-    {
-        $stmt = App::db()->prepare('DELETE FROM volunteers WHERE id = :id');
-        return $stmt->execute([':id' => $id]);
-    }
+public static function delete(int $id): bool
+{
+    $stmt = App::db()->prepare('DELETE FROM volunteers WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    return $stmt->rowCount() > 0;
+}
+
 
     private static function map(array $row): self
     {

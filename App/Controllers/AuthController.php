@@ -51,7 +51,7 @@ class AuthController extends Controller
             $stmt = App::db()->prepare("INSERT INTO users (name,email,password) VALUES (:name,:email,:password)");
             $stmt->execute([':name' => $name, ':email' => $email, ':password' => $password]);
 
-            $this->redirect('/volunteer-managment/public/auth/login');
+            $this->redirect('/php-project/public/auth/login');
         } else {
             $this->render('auth/register');
         }
@@ -62,7 +62,7 @@ class AuthController extends Controller
         // session_start();
         $_SESSION = [];
         session_destroy();
-        $this->redirect('/volunteer-managment/public/auth/login');
+        $this->redirect('/php-project/public/auth/login');
     }
 
 
