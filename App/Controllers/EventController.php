@@ -8,16 +8,21 @@ class EventController extends Controller
 {
     public function index(): void
     {
-        if (!isset($_SESSION['user_id'])) {
-            $this->redirect('/auth/login');
-            return;
-        }
+        // if (!isset($_SESSION['user_id'])) {
+        //     $this->redirect('/auth/login');
+        //     return;
+        // }
 
         $events = Event::all();
-        $this->render('events/index', [
-            'title' => 'قائمة الفعاليات',
-            'events' => $events
-        ]);
+        // $this->render('events/index', [
+        //     'title' => 'قائمة الفعاليات',
+        //     'events' => $events
+        // ]);
+        http_response_code(200);
+            echo json_encode([
+        'status' => 'success',
+        'events' => $events
+    ]);
     }
 
     public function indexApi(): void

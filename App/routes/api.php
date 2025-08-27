@@ -4,6 +4,7 @@ use App\Controllers\AuthController;
 use App\Controllers\UserController;
 use App\Controllers\VolunteerController;
 use App\Controllers\EventController;
+use App\Controllers\MatchingController;
 
 $routerApi = new RouterAPI();
 $routerApi->post('/php-project/public/api/login', [AuthController::class, 'apiLogin'], false);
@@ -16,10 +17,11 @@ $routerApi->post('/php-project/public/api/volunteers', [VolunteerController::cla
 $routerApi->put('/php-project/public/api/volunteers/{id}', [VolunteerController::class, 'apiupdate'], false);
 $routerApi->delete('/php-project/public/api/volunteers/{id}', [VolunteerController::class, 'apiDelete'], false);
 
- $routerApi->get('/php-project/public/api/events', [EventController::class, 'indexApi'], false);
+$routerApi->get('/php-project/public/api/events', [EventController::class, 'indexApi'], false);
 $routerApi->get('/php-project/public/api/events/{id}', [EventController::class, 'show'], false);
 $routerApi->post('/php-project/public/api/events', [EventController::class, 'apiCreate'], false);
 $routerApi->put('/php-project/public/api/events/{id}', [EventController::class, 'apiUpdate'], false);
 $routerApi->delete('/php-project/public/api/events/{id}', [EventController::class, 'apiDelete'], false);
 
+$routerApi->get('/php-project/public/api/matching/run', [MatchingController::class, 'runMatch'], false);
 $routerApi->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

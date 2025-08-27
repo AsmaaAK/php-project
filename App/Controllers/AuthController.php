@@ -69,17 +69,17 @@ class AuthController extends Controller
 
 public function apiLogin(): void
 {
-    // Handle CORS (if needed)
+    
     header("Content-Type: application/json; charset=utf-8");
     
-    // Only accept POST
+
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         http_response_code(405);
         echo json_encode(['status'=>'error','message'=>'Method not allowed']);
         return;
     }
 
-    // Get JSON input
+ 
     $data = json_decode(file_get_contents('php://input'), true);
     $email = $data['email'] ?? '';
     $password = $data['password'] ?? '';
@@ -100,7 +100,7 @@ public function apiLogin(): void
                 'email' => $user->email
             ]
         ]);
-                exit; // ⚠️ Important: stop script execution after sending JSON
+                exit; 
 
     } else {
         http_response_code(401);
@@ -108,7 +108,7 @@ public function apiLogin(): void
             'status' => 'error',
             'message' => 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
         ]);
-                exit; // ⚠️ Important: stop script execution after sending JSON
+                exit; 
 
     }
 }
@@ -125,21 +125,20 @@ public function apiRegister(): void
 
     header('Content-Type: application/json; charset=utf-8');
 
-    // التحقق من أن الحقول غير فارغة
     if (empty($name) || empty($email) || empty($password)) {
         http_response_code(400);
         echo json_encode([
             'status' => 'error',
             'message' => 'جميع الحقول مطلوبة'
         ]);
-        exit; // <-- استخدم exit بدلاً من return
+        exit; 
     }
 
-    // تشفير كلمة المرور
+    
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
     try {
-        // إدخال المستخدم في قاعدة البيانات
+       
         $stmt = App::db()->prepare(
             "INSERT INTO users (name, email, password) VALUES (:name, :email, :password)"
         );
@@ -149,7 +148,7 @@ public function apiRegister(): void
             ':password' => $hashedPassword
         ]);
 
-        http_response_code(201); // تم إنشاء المستخدم
+        http_response_code(201); 
         echo json_encode([
             'status' => 'success',
             'message' => 'تم تسجيل المستخدم بنجاح',
@@ -158,17 +157,17 @@ public function apiRegister(): void
                 'email' => $email
             ]
         ]);
-        exit; // <-- تأكد من إنهاء السكريبت بعد الإرسال
+        exit; 
 
     } catch (\PDOException $e) {
-        // في حال البريد موجود مسبقًا أو أي خطأ في DB
+       
         http_response_code(409);
         echo json_encode([
             'status' => 'error',
             'message' => 'البريد الإلكتروني مستخدم مسبقًا أو حدث خطأ',
             'error' => $e->getMessage()
         ]);
-        exit; // <-- نهاية السكريبت
+        exit; 
     }
 }
 
