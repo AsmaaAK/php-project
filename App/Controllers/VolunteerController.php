@@ -121,7 +121,7 @@ $volunteer->skills = isset($data['skills']) ? json_encode($data['skills']) : '';
         $volunteer->availability = $data['availability'] ?? $volunteer->availability;
         $volunteer->email = $data['email'] ?? $volunteer->email;
         // $volunteer->skills = $data['skills'] ?? $volunteer->skills;
-$volunteer->skills = isset($data['skills']) ? json_encode($data['skills']) :  $volunteer->skills;
+        $volunteer->skills = isset($data['skills']) ? json_encode($data['skills']) :  $volunteer->skills;
 
         try {
             if ($volunteer->save()) {
@@ -148,7 +148,7 @@ $volunteer->skills = isset($data['skills']) ? json_encode($data['skills']) :  $v
     }
 public function apiDelete($id): void
 {
-    $id = (int)$id; // تحويل الـ id إلى int
+    $id = (int)$id; 
 
     header('Content-Type: application/json; charset=utf-8');
 

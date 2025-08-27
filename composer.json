@@ -1,5 +1,5 @@
 {
-    "name": "a/volunteer-managment",
+    "name": "a/php-project",
     "autoload": {
         "psr-4": {
              "App\\": "app/"

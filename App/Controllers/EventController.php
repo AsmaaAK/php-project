@@ -55,7 +55,7 @@ class EventController extends Controller
         $event->location = $data['location'] ?? '';
         $event->required_Skills = isset($data['required_Skills']) ? json_encode($data['required_Skills']) : '';
 
-        // التحقق من الحقول المطلوبة
+       
         if (empty($event->name) || empty($event->location) || empty($event->event_time)) {
             http_response_code(400);
             echo json_encode([
@@ -95,89 +95,118 @@ class EventController extends Controller
         exit;
     }
 
-    public function apiUpdate(): void
-    {
-        header('Content-Type: application/json; charset=utf-8');
+public function apiUpdate($id): void
+{
+    $id = (int)$id;
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
-            http_response_code(405);
-            echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
-            exit;
-        }
+    header('Content-Type: application/json; charset=utf-8');
 
-        $data = json_decode(file_get_contents('php://input'), true);
-        $id = (int)($data['id'] ?? 0);
-
-        $event = Event::find($id);
-        if (!$event) {
-            http_response_code(404);
-            echo json_encode(['status' => 'error', 'message' => 'الفعالية غير موجودة']);
-            exit;
-        }
-
-        $event->name = $data['name'] ?? $event->name;
-        $event->description = $data['description'] ?? $event->description;
-        $event->event_time = $data['event_time'] ?? $event->event_time;
-        $event->location = $data['location'] ?? $event->location;
-        $event->required_Skills = isset($data['required_Skills']) ? json_encode($data['required_Skills']) : $event->required_Skills;
-
-        try {
-            if ($event->save()) {
-                echo json_encode([
-                    'status' => 'success',
-                    'message' => 'تم تحديث بيانات الفعالية بنجاح'
-                ]);
-            } else {
-                http_response_code(500);
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'فشل في تحديث البيانات'
-                ]);
-            }
-        } catch (\PDOException $e) {
-            http_response_code(409);
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'خطأ في تحديث البيانات',
-                'error' => $e->getMessage()
-            ]);
-        }
+    if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+        http_response_code(405);
+        echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
         exit;
     }
 
-    public function apiDelete($id): void
-    {
-        $id = (int)$id;
+    $data = json_decode(file_get_contents('php://input'), true);
 
-        header('Content-Type: application/json; charset=utf-8');
+    $event = Event::find($id);
+    if (!$event) {
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'الفعالية غير موجودة']);
+        exit;
+    }
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
-            http_response_code(405);
-            echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
-            exit;
-        }
+    $event->name = $data['name'] ?? $event->name;
+    $event->description = $data['description'] ?? $event->description;
+    $event->event_time = $data['event_time'] ?? $event->event_time;
+    $event->location = $data['location'] ?? $event->location;
+    $event->required_Skills = isset($data['required_Skills']) ? json_encode($data['required_Skills']) : $event->required_Skills;
 
-        try {
-            if (Event::delete($id)) {
-                echo json_encode([
-                    'status' => 'success',
-                    'message' => 'تم حذف الفعالية بنجاح'
-                ]);
-            } else {
-                http_response_code(404);
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'الفعالية غير موجودة'
-                ]);
-            }
-        } catch (\PDOException $e) {
+    try {
+        if ($event->save()) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'تم تحديث بيانات الفعالية بنجاح'
+            ]);
+        } else {
             http_response_code(500);
             echo json_encode([
                 'status' => 'error',
-                'message' => 'فشل في حذف الفعالية',
-                'error' => $e->getMessage()
+                'message' => 'فشل في تحديث البيانات'
             ]);
         }
+    } catch (\PDOException $e) {
+        http_response_code(409);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'خطأ في تحديث البيانات',
+            'error' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
+
+public function apiDelete($id): void
+{
+    $id = (int)$id;
+
+    header('Content-Type: application/json; charset=utf-8');
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+        http_response_code(405);
+        echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
         exit;
     }
+
+    try {
+        if (Event::delete($id)) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'تم حذف الفعالية بنجاح'
+            ]);
+        } else {
+            http_response_code(404);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'الفعالية غير موجودة'
+            ]);
+        }
+    } catch (\PDOException $e) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'فشل في حذف الفعالية',
+            'error' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
+    public function show($id): void
+   {
+    $id = (int)$id;
+    $event = Event::find($id);
+    
+    header('Content-Type: application/json; charset=utf-8');
+    
+    if ($event) {
+        echo json_encode([
+            'status' => 'success',
+            'event' => [
+                'id' => $event->id,
+                'name' => $event->name,
+                'description' => $event->description,
+                'event_time' => $event->event_time,
+                'location' => $event->location,
+                'required_Skills' => json_decode($event->required_Skills, true)
+            ]
+        ]);
+    } else {
+        http_response_code(404);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'الفعالية غير موجودة'
+        ]);
+    }
+    exit;
+}
 }
